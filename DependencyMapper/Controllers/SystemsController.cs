@@ -174,6 +174,18 @@ namespace DependencyMapper.Controllers
 
                 db.Entry(system).State = EntityState.Modified;
                 await db.SaveChangesAsync();
+
+                if (dependants != null)
+                {
+                    system.Dependants.RemoveAll(d => !dependants.Contains(d.ID));
+                }
+
+                if (dependancies != null)
+                {
+                    system.Dependancies.RemoveAll(d => !dependancies.Contains(d.ID));
+                }
+                await db.SaveChangesAsync();
+
                 return RedirectToAction("Index");
             }
             await SetSystemList(dependants, dependancies);
