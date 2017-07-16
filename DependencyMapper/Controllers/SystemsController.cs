@@ -64,43 +64,6 @@ namespace DependencyMapper.Controllers
                 return HttpNotFound();
             }
 
-            List<Link> links = new List<Link>();
-
-            if (system.Dependants != null)
-            {
-                links.AddRange(
-                    system.Dependants?
-                    .Select(s =>
-                    new Link()
-                    {
-                        Source = s.Name,
-                        Target = system.Name,
-                        Type = "Dependant"
-                    })
-                    );
-            }
-
-            if (system.Dependancies != null)
-            {
-                links.AddRange(
-                    system.Dependancies?
-                    .Select(s =>
-                    new Link()
-                    {
-                        Source = system.Name,
-                        Target = s.Name,
-                        Type = "Dependancy"
-                    })
-                    );
-            }
-            ViewBag.Links = JsonConvert.SerializeObject(links,
-                new JsonSerializerSettings()
-                {
-                    NullValueHandling = NullValueHandling.Include,
-                    
-                }
-                );
-
             return View(system);
         }
 
@@ -212,7 +175,23 @@ namespace DependencyMapper.Controllers
         [HttpPost, ActionName("Delete"), ValidateAntiForgeryToken]
         public async Task<ActionResult> DeleteConfirmed(int id)
         {
-            DependencyMapper.Models.System system = await db.Systems.FindAsync(id);
+            var system = await GetSystem(id);
+            if (system.Dependants != null)
+            {
+                foreach (var item in system.Dependants)
+                {
+                    item.Dependancies.Remove(system);
+                }
+            }
+
+            if (system.Dependancies != null)
+            {
+                foreach (var item in system.Dependancies)
+                {
+                    item.Dependants.Remove(system);
+                }
+            }
+            await db.SaveChangesAsync();
             db.Systems.Remove(system);
             await db.SaveChangesAsync();
             return RedirectToAction("Index");
